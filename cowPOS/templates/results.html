@@ -1,0 +1,114 @@
+<!-- base.html読み込み -->
+{% extends 'base.html' %}
+
+<!-- staticファイル読み込み -->
+{% load static %}
+
+<!-- ページ名 -->
+{% block title %}Results{% endblock %}
+
+<!-- ページ内容 -->
+{% block content %}
+<h3>結果発表～～！！</h3>
+
+    <div class="results_view">
+        <!-- グラフ -->
+        <div class="chart">
+            <canvas id="radar-chart" height="70px"></canvas>
+        </div>
+
+            <!-- 
+            辞書 = [{商品名, 販売総本数, 総売上}]
+            pos_dict = [ 
+                {'name':'塩', 'total':5, 'profit':2500} ,
+                {'name':'醤油', 'total':0, 'profit':0} ,
+                {'name':'胡椒', 'total':'2', 'profit':1000} 
+                ]
+            -->
+
+        <!-- 売上の集計 -->
+        <div class="sep_total">
+            {% for key, value in pos_dict.items %}
+                <!-- 商品名 -->
+                <div class="obj name_view">
+                    <p class="text">{{ value.name }}</p>
+                </div>
+
+                <!-- 総本数 -->
+                <div class="obj total_view">
+                    <p class="text">{{ value.total }}</p>
+                    <p class="text">本</p>
+                </div>
+
+                <!-- 総売上 -->
+                <div class="obj profit_view">
+                    <p class="text">{{ value.profit }}</p>
+                    <p class="text">円</p>
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+
+
+    <!-- JS -->
+    <script type="text/javascript">
+
+        //  ----- グラフを生成する要素のidを取得 -----
+        var ctx = document.getElementById("radar-chart");
+
+        // ----- 必要なデータの定義 -----
+        // ・hour_list（経過した1時間の文字列）
+        // ・saled_list（時間ごとの売上）
+        hour_list = ['9:00', '10:00', '11:00', '12:00', '13:00']
+        saled_list = [15, 300, 900, 1200, 1300]
+
+        // -----描画するデータの辞書を作成 -----
+        var data = {
+            labels: hour_list,
+            datasets: [{
+                label: '売上高',
+                data: saled_list,
+                borderColor: 'rgba(255, 100, 100, 1)',
+                lineTension: 0,
+                fill: false,
+                borderWidth: 3
+            }]
+        };
+
+        // ----- オプションの設定 -----
+        var options = {
+            
+            // --- タイトルの設定 ---
+            title: { display: true, text: '売上高推移' },
+
+            // --- グラフ軸の詳細 ---
+            scales: {
+                // -- 縦軸 --
+                yAxes: [{
+                    ticks: { callback:function(value,index,values){
+                        return value+'百円'
+                        }
+                    }
+                }],
+                // -- 横軸 --
+                xAxes: [{
+                    gridLines: { display: false } // 垂直補助線を消す
+                }],
+            },
+        }
+
+        // ----- グラフ描画 -----
+        var ex_chart = new Chart(ctx, {
+            type: 'line',
+            data: data,
+            options: options
+        });
+
+    </script>
+
+
+{% endblock %}

@@ -1,0 +1,162 @@
+<!-- base.html読み込み -->
+{% extends 'base.html' %}
+
+<!-- staticファイル読み込み -->
+{% load static %}
+
+<!-- ページ名 -->
+{% block title %}My_POSsys{% endblock %}
+
+<!-- ページ内容 -->
+{% block content %}
+    <!-- css -->
+    <link rel="stylesheet" href="{% static '/css/pos_page.css' %}">
+
+    <h3 class="text">牛串POS</h3>
+
+    <!-- 入力フォーム -->
+    <div class="input_form">
+        <form class="posform" name="posform" method="POST">
+            {% csrf_token %}
+
+            <div class="all_list">
+                {% for key, value in Prodacts_dict.items %}
+                    <div class="item_list">
+                        <!-- 商品名 -->
+                        <div class="input name">
+                            <p class="text">{{ key }}</p>
+                        </div>
+
+                        <!-- 値段入力 -->
+                        <div class="input input_price">
+                            <input type="number" class="price" id="price{{ key }}" name="price{{ key }}" value={{ value }} onchange=GetDate()>
+                            <p class="text">円</p>
+                        </div>
+
+                        <!-- 個数入力 -->
+                        <div class="input number-spinner input_saled">
+                            <input type="number" class="saled" id="saled{{ key }}" name="saled{{ key }}" value=0 onchange=GetDate()>
+                            <span class="spinner spinner-down">-</span>
+                            <span class="spinner spinner-up">+</span>
+                            <p class="text">個</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="enter">
+
+                <!-- 会計入力 -->
+                <div class="input input_bill">
+                    <p class="text">お預かり</p>
+                    <input type="number" class="bill" id=bill name="bill" value=0 onchange=GetDate()>
+                </div>
+
+                <!-- submitボタン -->
+                <div class="input_saled">
+                    <button type="submit" class="subbtn" id="subbtn" name="subbtn">SUBMIT</button>
+                </div>
+
+            </div>
+
+        </form>
+    </div>
+
+    <div>
+        <div class="input">
+            <p class="text">小計：</p>
+            <div id="subtotal">0</div>
+        </div>
+        <div class="input">
+            <p class="text">おつり：</p>
+            <div id="refund">0</div>
+        </div>
+    </div>
+
+    <!-- JS -->
+    <script>
+        // === フォームの値を取得する関数 ===
+        function GetDate(){
+            var get_dict = {{ Prodacts_dict | safe }};
+
+            // お預かり金額を取得
+            var amount = document.getElementById('bill').value;
+
+            // 各オブジェクトのvalueを取得する
+            sum = 0;
+            for (var key in get_dict){
+                if (get_dict.hasOwnProperty(key)){
+                    var value = document.getElementById('price'+key).value; // 値段
+                    var saled = document.getElementById('saled'+key).value; // 個数
+                    sum += value*saled
+                }
+            }            
+
+            // おつりを計算
+            var refund = amount - sum;
+            document.getElementById("subtotal").innerText = sum;
+            document.getElementById("refund").innerText = refund;
+        }
+
+        const $wrap = document.querySelector('.number-spinner')
+        const $input = $wrap.querySelector('input')
+        $wrap.querySelector('.spinner-down').onclick = ()=>{
+        $input.stepDown()
+        }
+        $wrap.querySelector('.spinner-up').onclick = ()=>{
+        $input.stepUp()
+        }
+
+    </script>
+
+    <style>
+    
+    /** デフォルトのスピンボタンを隠す **/
+    .number-spinner input::-webkit-outer-spin-button,
+    .number-spinner input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0; 
+    }
+    /** input要素 **/
+    .number-spinner input{
+        text-align: center;
+    }
+
+
+    /* name, price, saledを横並びにする */
+    .item_list{
+        display: flex;
+        width:100%;
+        height:10%;
+    }
+
+    .input{
+        display: flex;
+        width:100%;
+        height:10%;
+    }
+
+    /* submitボタン, 預かり金額を横並びにする */
+    .enter{
+        display: flex;
+        padding: 1.0em 0.0em; /*上下 左右の余白*/
+    }
+
+
+    /* ----- hタグ ----- */
+    .text {
+        padding: 0.0em 0.5em; /*上下 左右の余白*/
+        text-align:left;
+        color: #494949; /*文字色*/
+        background: transparent; /*背景透明に*/
+    }
+
+    .container {
+        position:absolute;
+        top: 10%;
+        left: 10%;
+        font-family: "ＭＳ Ｐ明朝";
+    }
+    </style>
+
+{% endblock %}
