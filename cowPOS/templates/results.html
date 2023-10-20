@@ -9,24 +9,28 @@
 
 <!-- ページ内容 -->
 {% block content %}
-<div class="results_view">
-    <!-- グラフ -->
-    <div class="chart">
-        <canvas id="radar-chart" height="70px"></canvas>
-    </div>
+
+
+    
 
     <!-- 売上の集計 -->
     <div id="sub_total"></div>
-
     <!-- 配当金 -->
-    <div class="reward">
-        <p>一人あたりの配当は</p>
-        <h3>{{ dividend }}円</h3>
+    <div class="reward-container">
+        <div class="reward">
+            <p>一人あたりの配当は</p>
+            <h3>{{ dividend }}円</h3>
+        </div>
+    </div>
+    <br>
+    <br>
+    <!-- グラフ -->
+    <div class="chart">
+        <canvas id="radar-chart" height="70"></canvas>
     </div>
 
-    </div>
-
-</div>
+    
+    
 
 
 
@@ -37,7 +41,31 @@
     // ===== グラフを描画する =====
 
     //  ----- グラフを生成する要素のidを取得 -----
-    var ctx = document.getElementById("radar-chart");
+    const colors = {
+        purple: {
+          default: "rgba(149, 76, 233, 1)",
+          half: "rgba(149, 76, 233, 0.5)",
+          quarter: "rgba(149, 76, 233, 0.25)",
+          zero: "rgba(149, 76, 233, 0)"
+        },
+        indigo: {
+          default: "rgba(80, 102, 120, 1)",
+          quarter: "rgba(80, 102, 120, 0.25)"
+        }
+      };
+    var ctx = document.getElementById("radar-chart").getContext("2d");
+    ctx.canvas.style.backgroundColor = '#192027';
+    gradient = ctx.createLinearGradient(0, 25, 0, 300);
+    gradient.addColorStop(0, colors.purple.half);
+    gradient.addColorStop(0.35, colors.purple.quarter);
+    gradient.addColorStop(1, colors.purple.zero);
+    function createGradient(ctx, color) {
+        const gradient = ctx.createLinearGradient(0, 25, 0, 300);
+        gradient.addColorStop(0, color.half);
+        gradient.addColorStop(0.35, color.quarter);
+        gradient.addColorStop(1, color.zero);
+        return gradient;
+    }
 
     // ----- 必要なデータの定義 -----
     var hour_list = JSON.parse('{{dates | safe}}');  // 経過した1時間の文字列
@@ -52,14 +80,20 @@
             var data = dict[key];
             var red = 255 - colorStep * rtn.length;
             var green = 0;
-            var blue = colorStep * rtn.length;
-            var color = 'rgba(' + red + ',' + green + ',' + blue + ', 1)'; // 赤から青に変化
+            var blue = 233;
+            var borderColor = 'rgba(' + red + ',' + green + ',' + blue + ', 1)';
+            var gradientColor = createGradient(ctx, {
+                half: 'rgba(' + red + ',' + green + ',' + blue + ', 0.5)',
+                quarter: 'rgba(' + red + ',' + green + ',' + blue + ', 0.25)',
+                zero: 'rgba(' + red + ',' + green + ',' + blue + ', 0)'
+            });
             dic = {
             label: key,
             data: data,
-            borderColor: color,
+            borderColor: borderColor,
+            backgroundColor: gradientColor,
             lineTension: 0,
-            fill: false,
+            fill: true,
             borderWidth: 3
         }
         rtn.push(dic)
@@ -70,9 +104,11 @@
     dataset = {
             label: '売上高',
             data: saled_list,
-            borderColor: 'rgba(255, 100, 100, 1)',
+            backgroundColor: gradient,
+            pointBackgroundColor: colors.purple.default,
+            borderColor: colors.purple.default,
             lineTension: 0,
-            fill: false,
+            fill: true,
             borderWidth: 3
         }
     console.log(graphdata)
@@ -87,15 +123,21 @@
    
     // ----- オプションの設定 -----
     var options = {
-        
         // --- タイトルの設定 ---
-        title: { display: true, text: '売上高推移' },
+        title: { display: true, text: '売上高推移',  fontSize: 24, },
+        responsive: true,
+    
 
         // --- グラフ軸の詳細 ---
         scales: {
             // -- 縦軸 --
             yAxes: [{
+                gridLines: {
+                    display: true,
+                    color: colors.indigo.quarter
+                  },
                 ticks: { 
+                    beginAtZero: false, // y=0から始まらないように設定
                     stepSize: 5000,  // 間隔
                     callback:function(value,index,values){
                     return (value/1000)+'千円'
@@ -104,10 +146,19 @@
             }],
             // -- 横軸 --
             xAxes: [{
-                gridLines: { display: false } // 垂直補助線を消す
-            }],
+                gridLines: {
+                  display: false
+                },
+                ticks: {
+                  padding: 10,
+                  autoSkip: false,
+                  maxRotation: 15,
+                  minRotation: 15
+                }
+              }],
         },
     }
+
 
     // ----- グラフ描画 -----
     var ex_chart = new Chart(ctx, {
@@ -115,6 +166,8 @@
         data: data,
         options: options
     });
+    
+    
 
     results_func();
     // ===== 各総計データの表示 =====
@@ -165,6 +218,13 @@
 </script>
 
 <style>
+    body {
+        font-family: "Fira Sans", sans-serif;
+        font-size: 1rem;
+        background-color: #192027;
+        
+        padding: 15px;
+      }
 /* ----- pタグ ----- */
     .text {
         padding: 0.0em 0.5em; /*上下 左右の余白*/
@@ -182,7 +242,7 @@
     .sub_doc{
         display: inline-block;
         margin: 5%;
-        background-color: rgb(211, 211, 211);
+        background-color: rgb(156,141,244);
         width: 140px;
 	    height: 140px;
         border-radius: 50%;
@@ -190,13 +250,20 @@
     }
 
 /* ----- 報酬 ----- */
+.reward-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+}
     .reward{
         padding: 0.0em 0.0em; /*上下 左右の余白*/
         text-align: center;
         width: 30%;
 	    height: 100%;
-        background-color: rgb(211, 211, 211);
+        background-color: rgb(152,10,156);
         border-radius: 5px;
+        position: center;
     }
 
 </style>

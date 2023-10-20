@@ -43,10 +43,12 @@ def pos_page(request):
 # http://127.0.0.1:8000/AppPOS/results/
 def results_page(request):
     # 初期化等
-    today_date = timezone.now()
+    today_date = timezone.now() # - timedelta(days=1)
     Prodacts_Info = models.Prodact_Name.objects.all()
     Accounting_Info = models.Accounting_Data.objects.filter(
         c_time__date=today_date)
+    max_date = today_date
+    min_date = today_date
     max_date = models.Accounting_Data.objects.filter(
         c_time__date=today_date).aggregate(Max('c_time'))['c_time__max']
     min_date = models.Accounting_Data.objects.filter(
@@ -54,15 +56,21 @@ def results_page(request):
     accounting_dict = {}
     # 1時間ごとのリストを作成
     date_list = []
-    current_date = min_date   # 最小日付から開始
-    max_date += timedelta(hours=1)
+     # 最小日付から開始
+    if max_date is None:
+        max_date = today_date
+    if min_date is None:
+        min_date = today_date
+    current_date = min_date  
     total_price = 0
     sumtotal_price = 0
     total_skewer = 0
     totals_price = []
+    print(max_date)
+    print(min_date)
 
     # 日付作成
-    while current_date <= max_date:
+    while current_date <= max_date + timedelta(hours=1):
         date_list.append(current_date.strftime("%H:00"))
         current_date += timedelta(hours=1)
 
@@ -121,7 +129,7 @@ def results_page(request):
 
     # 一人当たりの配当金
 
-    give_maney = 30000
+    give_maney = 0
     people = 31
     dividend = 0
     dividend = (sumtotal_price - give_maney) / people

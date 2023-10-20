@@ -1,79 +1,92 @@
-<!-- base.html読み込み -->
 {% extends 'base.html' %}
-
-<!-- staticファイル読み込み -->
 {% load static %}
+{% load django_bootstrap5 %}
 
-<!-- ページ名 -->
 {% block title %}My_POSsys{% endblock %}
 
-<!-- ページ内容 -->
 {% block content %}
-    <!-- css -->
-    <link rel="stylesheet" href="{% static '/css/pos_page.css' %}">
+    <link rel="stylesheet" href="{% static 'css/pos_page.css' %}">
+    {% bootstrap_css %}
+    {% bootstrap_javascript %}
+    <style>
+        .body {
+            background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url("{% static 'img/background.jpg' %}");
+            background-size: cover;
+            width: 100%;
+            max-width: 1280px;
+            margin: auto;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
 
-    <!-- 入力フォーム -->
+        .input_form {
+            margin: 0 20px; /* 左右に20pxのマージンを追加 */
+            padding: 35px; /* 必要に応じて調整 */
+            background-color: #192027;
+        }
+    </style>
+
+    
+
+    <div class="container">
     <div class="input_form">
         <form class="posform" name="posform" method="POST" onsubmit="return false;">
             {% csrf_token %}
-
-            <div class="all_list">
+            <div class="row align-items-center">
                 {% for key, value in Prodacts_dict.items %}
-                    <div class="item_list">
-                        <!-- 商品名 -->
-                        <div class="input name">
-                            <p class="text">{{ key }}</p>
-                        </div>
-
-                        <!-- 値段入力 -->
-                        <div class="input input_price">
-                            <p type="number" class="price text" id="price{{ key }}" name="price{{ key }}">{{ value }} </p>
-                            <p class="text">円</p>
-                        </div>
-
-                        <!-- 個数入力 -->
-                        <div class="input number-spinner input_saled">
-                            <button type="button" class="numbtn minus" id="{{ key }}" onclick="minus(this.id), GetDate();">-</button>
-                            <input type="number" class="saled" id="saled{{ key }}" name="saled{{ key }}" value=0>
-                            <button type="button" class="numbtn plus" id="{{ key }}" onclick="plus(this.id), GetDate();">+</button>
-                            <p class="text">個</p>
+                    <div class="col-4">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ key }}</h5>
+                                <p class="card-text">Price: {{ value }}円</p>
+                                <div class="input-group">
+                                    <button type="button" class="btn btn-secondary" id="{{ key }}" onclick="minus(this.id), GetDate();">-</button>
+                                    <input type="number" class="form-control text-center" id="saled{{ key }}" name="saled{{ key }}" value="0">
+                                    <button type="button" class="btn btn-secondary" id="{{ key }}" onclick="plus(this.id), GetDate();">+</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 {% endfor %}
-                <!-- 会計入力 -->
-                <div class="input_bill">
-                    <p class="text">お預かり</p>
-                    <input type="number" class="bill" id=bill name="bill" value=0 onchange=GetDate()>
+            </div>
+
+            <div class="mb-3">
+                <label for="bill" class="form-label text-white">お預かり:</label>
+                <input type="number" class="form-control" id="bill" name="bill" value="0" onchange="GetDate()">
+            </div>
+
+            <div class="row">
+                <div class="col-6">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">小計:</h5>
+                            <h4 class="card-text text-success" id="subtotal">0</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">おつり:</h5>
+                            <h4 class="card-text text-danger" id="refund">0</h4>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="enter">
-
-
-
-                <!-- submitボタン -->
-                <div class="input_saled">
-                    <input type="button" class="subbtn" id="subbtn" name="subbtn" onclick="submit();" value="お会計">
-                </div>
-
-            </div>
-
+            <button type="button" class="btn btn-primary" id="subbtn" name="subbtn" onclick="submit();">お会計</button>
         </form>
-    </div>
+       </div>
+</div>
 
-    <div class="results">
-        <div class="input rlt_tol">
-            <h4 class="text_w">小計：</h4>
-            <h4 class="text_w" id="subtotal">0</h4>
-        </div>
-        <div class="input rlt_ref">
-            <h4 class="text_w">おつり：</h4>
-            <h4 class="text_w" id="refund">0</h4>
-        </div>
-    </div>
 
-    <!-- JS -->
     <script>
+        // Your JavaScript code here
         // === フォームの値を取得する関数 ===
         function GetDate(){
             var get_dict = {{Prodacts_dict | safe}};
@@ -118,124 +131,5 @@
 
     </script>
 
-    <style>
-    /* ----- 全体設定 ----- */
-
-        .container {
-            margin:auto;
-            padding: 2%, 2%;
-            font-family: "ＭＳ Ｐ明朝";
-            background: #343a40ec;
-        }
-
-    /* ----- pタグ ----- */
-        .text {
-            padding: 0.0em 0.5em; /*上下 左右の余白*/
-            text-align:left;
-            font-size: 24px;
-            color: #ffffff; /*文字色*/
-            background: transparent; /*背景透明に*/
-        }
-
-    /* ----- 入力フォーム ----- */
-        .all_list{
-            margin:auto;
-            padding: 2% 2%;
-            width:800px;
-            height:100%;
-
-        }
-        .item_list{
-            display: flex;
-            position: relative;
-            padding: 2% 2%;
-            width:100%;
-            height:60px;
-        }
-        .input{
-            display: flex;
-            width:100%;
-            height:60px;
-        }
-
-        .input_bill{
-            float: left;
-            width:420px;
-            height:60px;
-        }
-
-        /* === + - のボタン === */
-        .numbtn{
-            background: #ffffff;
-            cursor: pointer;
-        }
-        .plus{
-            background: #A8DADC;
-            border:none;
-            border-top-right-radius: 5px;
-            border-bottom-right-radius: 5px;
-        }
-        .minus{
-            background: #A8DADC;
-            border:none;
-            border-top-left-radius: 5px;
-            border-bottom-left-radius: 5px;
-        }
     
-        /* === 個数表示input ===*/
-        .number-spinner input{
-            width: 100px;
-            text-align: center;
-            background: #ffffff;
-            border-top:1px solid #ffffff;
-            border-bottom:1px solid #ffffff;
-            border-right:none;
-            border-left:none;
-            outline:none
-        }
-        /** デフォルトのスピンボタンを隠す **/
-        .number-spinner input::-webkit-outer-spin-button,
-        .number-spinner input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0; 
-        }
-
-
-    /* submitボタン, 預かり金額 */
-        .enter{
-            display: flex;
-            justify-content: center;
-            padding: 2.0em 0.0em; /*上下 左右の余白*/
-        }
-        /* お預かりinput */
-        .bill{
-            border-radius: 5px;
-            border:none;
-            width: 40%;
-            text-align: right;
-        }
-        /* submit */
-        .subbtn{
-            width:100%;
-            height:100px;
-            background: #A8DADC;
-            border:none;
-            border-radius: 5px;
-        }
-    
-    /* 小計、おつり表示 */
-        .results{
-            background-color: #ffffff;
-            width:300px;
-            height:100px;
-            border-radius: 5px;
-            /* 子要素を水平方向の中央に配置する（できない） */
-            display:flex;
-            flex-flow: column;
-            justify-content: center;
-            object-position: 50% 50%;
-        }
-        
-    </style>
-
 {% endblock %}
