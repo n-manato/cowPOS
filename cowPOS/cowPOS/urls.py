@@ -8,7 +8,7 @@ from . import views
 
 urlpatterns = [
     # app_folderにアクセスするURL
-    path('AppPOS/', include('AppPOS.urls')),
+    path('', include('AppPOS.urls')),
     # 管理サイトにアクセスするURL
     path('admin/', admin.site.urls)
 ]

@@ -9,106 +9,197 @@
 
 <!-- ページ内容 -->
 {% block content %}
-<h3>結果発表～～！！</h3>
+<div class="results_view">
+    <!-- グラフ -->
+    <div class="chart">
+        <canvas id="radar-chart" height="70px"></canvas>
+    </div>
 
-    <div class="results_view">
-        <!-- グラフ -->
-        <div class="chart">
-            <canvas id="radar-chart" height="70px"></canvas>
-        </div>
+    <!-- 売上の集計 -->
+    <div id="sub_total"></div>
 
-            <!-- 
-            辞書 = [{商品名, 販売総本数, 総売上}]
-            pos_dict = [ 
-                {'name':'塩', 'total':5, 'profit':2500} ,
-                {'name':'醤油', 'total':0, 'profit':0} ,
-                {'name':'胡椒', 'total':'2', 'profit':1000} 
-                ]
-            -->
-
-        <!-- 売上の集計 -->
-        <div class="sep_total">
-            {% for key, value in pos_dict.items %}
-                <!-- 商品名 -->
-                <div class="obj name_view">
-                    <p class="text">{{ value.name }}</p>
-                </div>
-
-                <!-- 総本数 -->
-                <div class="obj total_view">
-                    <p class="text">{{ value.total }}</p>
-                    <p class="text">本</p>
-                </div>
-
-                <!-- 総売上 -->
-                <div class="obj profit_view">
-                    <p class="text">{{ value.profit }}</p>
-                    <p class="text">円</p>
-                </div>
-
-            {% endfor %}
-
-        </div>
+    <!-- 配当金 -->
+    <div class="reward">
+        <p>一人あたりの配当は</p>
+        <h3>{{ dividend }}円</h3>
+    </div>
 
     </div>
 
+</div>
 
 
-    <!-- JS -->
-    <script type="text/javascript">
 
-        //  ----- グラフを生成する要素のidを取得 -----
-        var ctx = document.getElementById("radar-chart");
+<!-- JS -->
+<script type="text/javascript">
 
-        // ----- 必要なデータの定義 -----
-        // ・hour_list（経過した1時間の文字列）
-        // ・saled_list（時間ごとの売上）
-        hour_list = ['9:00', '10:00', '11:00', '12:00', '13:00']
-        saled_list = [15, 300, 900, 1200, 1300]
 
-        // -----描画するデータの辞書を作成 -----
-        var data = {
-            labels: hour_list,
-            datasets: [{
-                label: '売上高',
-                data: saled_list,
-                borderColor: 'rgba(255, 100, 100, 1)',
-                lineTension: 0,
-                fill: false,
-                borderWidth: 3
-            }]
-        };
+    // ===== グラフを描画する =====
 
-        // ----- オプションの設定 -----
-        var options = {
-            
-            // --- タイトルの設定 ---
-            title: { display: true, text: '売上高推移' },
+    //  ----- グラフを生成する要素のidを取得 -----
+    var ctx = document.getElementById("radar-chart");
 
-            // --- グラフ軸の詳細 ---
-            scales: {
-                // -- 縦軸 --
-                yAxes: [{
-                    ticks: { callback:function(value,index,values){
-                        return value+'百円'
-                        }
+    // ----- 必要なデータの定義 -----
+    var hour_list = JSON.parse('{{dates | safe}}');  // 経過した1時間の文字列
+    var saled_list = JSON.parse('{{totals_price | safe}}'); // 一時間ごとの売上
+    var accounting_timedata = JSON.parse('{{accounting_timedata | safe}}');
+    
+    function graph_dict(dict){
+        rtn =[]
+        var maxItems = Object.keys(dict).length; // カラム数
+        var colorStep = 255 / maxItems; // 色相のステップ
+        for(var key in dict){
+            var data = dict[key];
+            var red = 255 - colorStep * rtn.length;
+            var green = 0;
+            var blue = colorStep * rtn.length;
+            var color = 'rgba(' + red + ',' + green + ',' + blue + ', 1)'; // 赤から青に変化
+            dic = {
+            label: key,
+            data: data,
+            borderColor: color,
+            lineTension: 0,
+            fill: false,
+            borderWidth: 3
+        }
+        rtn.push(dic)
+        }
+        return rtn
+    }
+    graphdata = graph_dict(accounting_timedata)
+    dataset = {
+            label: '売上高',
+            data: saled_list,
+            borderColor: 'rgba(255, 100, 100, 1)',
+            lineTension: 0,
+            fill: false,
+            borderWidth: 3
+        }
+    console.log(graphdata)
+    graphdata.push(dataset)
+
+    
+    // -----描画するデータの辞書を作成 -----
+    var data = {
+        labels: hour_list,
+        datasets:graphdata
+    };
+   
+    // ----- オプションの設定 -----
+    var options = {
+        
+        // --- タイトルの設定 ---
+        title: { display: true, text: '売上高推移' },
+
+        // --- グラフ軸の詳細 ---
+        scales: {
+            // -- 縦軸 --
+            yAxes: [{
+                ticks: { 
+                    stepSize: 5000,  // 間隔
+                    callback:function(value,index,values){
+                    return (value/1000)+'千円'
                     }
-                }],
-                // -- 横軸 --
-                xAxes: [{
-                    gridLines: { display: false } // 垂直補助線を消す
-                }],
-            },
+                }
+            }],
+            // -- 横軸 --
+            xAxes: [{
+                gridLines: { display: false } // 垂直補助線を消す
+            }],
+        },
+    }
+
+    // ----- グラフ描画 -----
+    var ex_chart = new Chart(ctx, {
+        type: 'line',
+        data: data,
+        options: options
+    });
+
+    results_func();
+    // ===== 各総計データの表示 =====
+    function results_func(){
+
+        // ----- 各変数の定義 -----
+        var sub_skwer = JSON.parse('{{times_skewer | safe}}'); // 各商品ごとの販売本数データ
+        var acc_skwer = JSON.parse('{{accounting_dict | safe}}'); // 各商品ごとの売上金データ
+        var name_list=[] // 商品名リスト
+        var saled_list=[] // 各商品の販売本数リスト
+        var proceed_list=[] // 各商品の売上リスト
+
+        // リストに変換
+        for (var key in sub_skwer){
+            name_list.push(key)
+            saled_list.push(sub_skwer[key])
+            proceed_list.push(acc_skwer[key])
         }
 
-        // ----- グラフ描画 -----
-        var ex_chart = new Chart(ctx, {
-            type: 'line',
-            data: data,
-            options: options
-        });
+        // HTML生成
+        let div_1 = document.createElement('div');
+        div_1.setAttribute('class','all_doc');
 
-    </script>
+        for(var j=0; j<name_list.length; j++){
+            let div_2 = document.createElement('div');
+            div_2.setAttribute('class','sub_doc');
+
+            let p_1 = document.createElement('h4');
+            p_1.setAttribute('class','text p_name');
+            p_1.textContent = name_list[j]
+            div_2.appendChild(p_1)
+
+            let p_2 = document.createElement('p');
+            p_2.setAttribute('class','text p_saled');
+            p_2.textContent = saled_list[j]+'本';
+            div_2.appendChild(p_2)
+
+            let p_3 = document.createElement('p');
+            p_3.setAttribute('class','text p_pro');
+            p_3.textContent = proceed_list[j]+'円';
+            
+            div_2.appendChild(p_3)
+            div_1.appendChild(div_2)
+        }
+        document.getElementById('sub_total').appendChild(div_1);
+    }
+
+</script>
+
+<style>
+/* ----- pタグ ----- */
+    .text {
+        padding: 0.0em 0.5em; /*上下 左右の余白*/
+        text-align:center;
+        color: #000000; /*文字色*/
+        background: transparent; /*背景透明に*/
+        line-height: 16px;
+    }
+
+/* ----- 集計 ----- */
+    .all_doc{
+        padding: 0.0em 0.5em; /*上下 左右の余白*/
+        text-align: center;
+    }
+    .sub_doc{
+        display: inline-block;
+        margin: 5%;
+        background-color: rgb(211, 211, 211);
+        width: 140px;
+	    height: 140px;
+        border-radius: 50%;
+    
+    }
+
+/* ----- 報酬 ----- */
+    .reward{
+        padding: 0.0em 0.0em; /*上下 左右の余白*/
+        text-align: center;
+        width: 30%;
+	    height: 100%;
+        background-color: rgb(211, 211, 211);
+        border-radius: 5px;
+    }
+
+</style>
 
 
 {% endblock %}

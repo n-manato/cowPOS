@@ -17,13 +17,25 @@
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js"></script>
 
         <!-- css -->
-
+        <style>
+            .body{
+                background-image: linear-gradient(rgba(0,0,0,0.4),rgba(0,0,0,0.4)),url("/static/img/background.jpg");
+                background-size: cover;
+                    width: 100%;
+                    max-width: 1280px;
+                    margin: auto;
+                
+            }
+            
+        </style>
+        
         <!-- タイトル -->
         <title>{% block title %}{% endblock %}</title>
+        
     </head>
 
     <!----- ボディ ----->
-    <body>
+    <body class="body">
         <div class="container">
             {% block content %}
             {% endblock %}

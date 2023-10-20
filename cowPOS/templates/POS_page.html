@@ -12,11 +12,9 @@
     <!-- css -->
     <link rel="stylesheet" href="{% static '/css/pos_page.css' %}">
 
-    <h3 class="text">牛串POS</h3>
-
     <!-- 入力フォーム -->
     <div class="input_form">
-        <form class="posform" name="posform" method="POST">
+        <form class="posform" name="posform" method="POST" onsubmit="return false;">
             {% csrf_token %}
 
             <div class="all_list">
@@ -29,32 +27,33 @@
 
                         <!-- 値段入力 -->
                         <div class="input input_price">
-                            <input type="number" class="price" id="price{{ key }}" name="price{{ key }}" value={{ value }} onchange=GetDate()>
+                            <p type="number" class="price text" id="price{{ key }}" name="price{{ key }}">{{ value }} </p>
                             <p class="text">円</p>
                         </div>
 
                         <!-- 個数入力 -->
                         <div class="input number-spinner input_saled">
-                            <input type="number" class="saled" id="saled{{ key }}" name="saled{{ key }}" value=0 onchange=GetDate()>
-                            <span class="spinner spinner-down">-</span>
-                            <span class="spinner spinner-up">+</span>
+                            <button type="button" class="numbtn minus" id="{{ key }}" onclick="minus(this.id), GetDate();">-</button>
+                            <input type="number" class="saled" id="saled{{ key }}" name="saled{{ key }}" value=0>
+                            <button type="button" class="numbtn plus" id="{{ key }}" onclick="plus(this.id), GetDate();">+</button>
                             <p class="text">個</p>
                         </div>
                     </div>
                 {% endfor %}
+                <!-- 会計入力 -->
+                <div class="input_bill">
+                    <p class="text">お預かり</p>
+                    <input type="number" class="bill" id=bill name="bill" value=0 onchange=GetDate()>
+                </div>
             </div>
 
             <div class="enter">
 
-                <!-- 会計入力 -->
-                <div class="input input_bill">
-                    <p class="text">お預かり</p>
-                    <input type="number" class="bill" id=bill name="bill" value=0 onchange=GetDate()>
-                </div>
+
 
                 <!-- submitボタン -->
                 <div class="input_saled">
-                    <button type="submit" class="subbtn" id="subbtn" name="subbtn">SUBMIT</button>
+                    <input type="button" class="subbtn" id="subbtn" name="subbtn" onclick="submit();" value="お会計">
                 </div>
 
             </div>
@@ -62,14 +61,14 @@
         </form>
     </div>
 
-    <div>
-        <div class="input">
-            <p class="text">小計：</p>
-            <div id="subtotal">0</div>
+    <div class="results">
+        <div class="input rlt_tol">
+            <h4 class="text_w">小計：</h4>
+            <h4 class="text_w" id="subtotal">0</h4>
         </div>
-        <div class="input">
-            <p class="text">おつり：</p>
-            <div id="refund">0</div>
+        <div class="input rlt_ref">
+            <h4 class="text_w">おつり：</h4>
+            <h4 class="text_w" id="refund">0</h4>
         </div>
     </div>
 
@@ -77,7 +76,8 @@
     <script>
         // === フォームの値を取得する関数 ===
         function GetDate(){
-            var get_dict = {{ Prodacts_dict | safe }};
+            var get_dict = {{Prodacts_dict | safe}};
+            console.log(get_dict)
 
             // お預かり金額を取得
             var amount = document.getElementById('bill').value;
@@ -86,77 +86,156 @@
             sum = 0;
             for (var key in get_dict){
                 if (get_dict.hasOwnProperty(key)){
-                    var value = document.getElementById('price'+key).value; // 値段
+                    var value = get_dict[key]; // 値段
                     var saled = document.getElementById('saled'+key).value; // 個数
                     sum += value*saled
                 }
-            }            
+            }
+            console.log(sum) 
 
             // おつりを計算
             var refund = amount - sum;
             document.getElementById("subtotal").innerText = sum;
             document.getElementById("refund").innerText = refund;
         }
-
-        const $wrap = document.querySelector('.number-spinner')
-        const $input = $wrap.querySelector('input')
-        $wrap.querySelector('.spinner-down').onclick = ()=>{
-        $input.stepDown()
+        
+        // === 個数の操作を行うボタンの関数 ===
+        // +ボタンが押されたら
+        function plus(get_id){
+            console.log(get_id)
+            var status = document.getElementById('saled'+get_id).value;
+            console.log(status)
+            document.getElementById('saled'+get_id).value = Number(status)+1;
         }
-        $wrap.querySelector('.spinner-up').onclick = ()=>{
-        $input.stepUp()
+
+        // -ボタンが押されたら
+        function minus(get_id){
+            console.log(get_id)
+            var status = document.getElementById('saled'+get_id).value;
+            console.log(status)
+            document.getElementById('saled'+get_id).value = Number(status)-1;
         }
 
     </script>
 
     <style>
+    /* ----- 全体設定 ----- */
+
+        .container {
+            margin:auto;
+            padding: 2%, 2%;
+            font-family: "ＭＳ Ｐ明朝";
+            background: #343a40ec;
+        }
+
+    /* ----- pタグ ----- */
+        .text {
+            padding: 0.0em 0.5em; /*上下 左右の余白*/
+            text-align:left;
+            font-size: 24px;
+            color: #ffffff; /*文字色*/
+            background: transparent; /*背景透明に*/
+        }
+
+    /* ----- 入力フォーム ----- */
+        .all_list{
+            margin:auto;
+            padding: 2% 2%;
+            width:800px;
+            height:100%;
+
+        }
+        .item_list{
+            display: flex;
+            position: relative;
+            padding: 2% 2%;
+            width:100%;
+            height:60px;
+        }
+        .input{
+            display: flex;
+            width:100%;
+            height:60px;
+        }
+
+        .input_bill{
+            float: left;
+            width:420px;
+            height:60px;
+        }
+
+        /* === + - のボタン === */
+        .numbtn{
+            background: #ffffff;
+            cursor: pointer;
+        }
+        .plus{
+            background: #A8DADC;
+            border:none;
+            border-top-right-radius: 5px;
+            border-bottom-right-radius: 5px;
+        }
+        .minus{
+            background: #A8DADC;
+            border:none;
+            border-top-left-radius: 5px;
+            border-bottom-left-radius: 5px;
+        }
     
-    /** デフォルトのスピンボタンを隠す **/
-    .number-spinner input::-webkit-outer-spin-button,
-    .number-spinner input::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0; 
-    }
-    /** input要素 **/
-    .number-spinner input{
-        text-align: center;
-    }
+        /* === 個数表示input ===*/
+        .number-spinner input{
+            width: 100px;
+            text-align: center;
+            background: #ffffff;
+            border-top:1px solid #ffffff;
+            border-bottom:1px solid #ffffff;
+            border-right:none;
+            border-left:none;
+            outline:none
+        }
+        /** デフォルトのスピンボタンを隠す **/
+        .number-spinner input::-webkit-outer-spin-button,
+        .number-spinner input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0; 
+        }
 
 
-    /* name, price, saledを横並びにする */
-    .item_list{
-        display: flex;
-        width:100%;
-        height:10%;
-    }
-
-    .input{
-        display: flex;
-        width:100%;
-        height:10%;
-    }
-
-    /* submitボタン, 預かり金額を横並びにする */
-    .enter{
-        display: flex;
-        padding: 1.0em 0.0em; /*上下 左右の余白*/
-    }
-
-
-    /* ----- hタグ ----- */
-    .text {
-        padding: 0.0em 0.5em; /*上下 左右の余白*/
-        text-align:left;
-        color: #494949; /*文字色*/
-        background: transparent; /*背景透明に*/
-    }
-
-    .container {
-        position:absolute;
-        top: 10%;
-        left: 10%;
-        font-family: "ＭＳ Ｐ明朝";
-    }
+    /* submitボタン, 預かり金額 */
+        .enter{
+            display: flex;
+            justify-content: center;
+            padding: 2.0em 0.0em; /*上下 左右の余白*/
+        }
+        /* お預かりinput */
+        .bill{
+            border-radius: 5px;
+            border:none;
+            width: 40%;
+            text-align: right;
+        }
+        /* submit */
+        .subbtn{
+            width:100%;
+            height:100px;
+            background: #A8DADC;
+            border:none;
+            border-radius: 5px;
+        }
+    
+    /* 小計、おつり表示 */
+        .results{
+            background-color: #ffffff;
+            width:300px;
+            height:100px;
+            border-radius: 5px;
+            /* 子要素を水平方向の中央に配置する（できない） */
+            display:flex;
+            flex-flow: column;
+            justify-content: center;
+            object-position: 50% 50%;
+        }
+        
     </style>
 
 {% endblock %}
