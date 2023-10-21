@@ -9,12 +9,12 @@
     {% bootstrap_css %}
     {% bootstrap_javascript %}
     <style>
-        .body {
+        body {
             background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url("{% static 'img/background.jpg' %}");
             background-size: cover;
             width: 100%;
-            max-width: 1280px;
-            margin: auto;
+
+            
         }
         .container {
             display: flex;
@@ -57,7 +57,7 @@
 
             <div class="mb-3">
                 <label for="bill" class="form-label text-white">お預かり:</label>
-                <input type="number" class="form-control" id="bill" name="bill" value="0" onchange="GetDate()">
+                <input type="number" class="form-control" id="bill" name="bill" value="" onchange="GetDate()">
             </div>
 
             <div class="row">
@@ -108,6 +108,9 @@
 
             // おつりを計算
             var refund = amount - sum;
+            if (refund < 0) {
+                refund = 0; // refundがマイナスの場合、0に設定
+            }
             document.getElementById("subtotal").innerText = sum;
             document.getElementById("refund").innerText = refund;
         }

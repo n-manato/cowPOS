@@ -7,9 +7,10 @@ from django.db.models import Max, Min
 from . import models
 from django.utils import timezone
 from django.utils.timezone import localtime
+from django.urls import reverse
 import json
 
-# http://127.0.0.1:8000/AppPOS/pos_page/
+# http://127.0.0.1:8000/pos_page/
 
 
 def pos_page(request):
@@ -33,17 +34,26 @@ def pos_page(request):
             submited.price = data.P_price
             submited.saled = request.POST.get('saled' + data.P_name)
             submited.save()
+  
+    menu_items = [
+        {'name': 'Submit', 'url': reverse('AppPOS:POS_page')},
+        {'name': 'Results', 'url': reverse('AppPOS:results')},
+        {'name': 'Order', 'url': reverse('AppPOS:order')},
+        {'name': 'Admin', 'url': reverse('admin:index')},
+    ]
 
     stats = {
         'Prodacts_dict': Prodacts_dict,
+        'menu_items': menu_items,
     }
+    
     return render(request, 'POS_page.html', stats)
 
 
-# http://127.0.0.1:8000/AppPOS/results/
+# http://127.0.0.1:8000/results/
 def results_page(request):
-    # 初期化等
-    today_date = timezone.now() # - timedelta(days=1)
+    # 初期化等ß
+    today_date = timezone.now() #- timedelta(days=1)
     Prodacts_Info = models.Prodact_Name.objects.all()
     Accounting_Info = models.Accounting_Data.objects.filter(
         c_time__date=today_date)
@@ -70,14 +80,14 @@ def results_page(request):
     print(min_date)
 
     # 日付作成
-    while current_date <= max_date + timedelta(hours=1):
-        date_list.append(current_date.strftime("%H:00"))
-        current_date += timedelta(hours=1)
-
+    while current_date <= max_date + timedelta(minutes=1):
+        date_list.append(current_date.strftime("%H:%M:00"))
+        current_date += timedelta(minutes=1)
+    
     # totalデータ作成
     for date in date_list:
         for data in Accounting_Info:
-            if data.c_time.strftime("%H:00") == date:
+            if data.c_time.strftime("%H:%M:00") == date:
                 total_price += data.price * data.saled
                 total_skewer += data.saled
         totals_price.append(total_price)
@@ -107,7 +117,7 @@ def results_page(request):
     for date in date_list:
         for data in Prodacts_Info:
             for data2 in Accounting_Info:
-                if data.P_name == data2.name.P_name and data2.c_time.strftime("%H:00") == date:
+                if data.P_name == data2.name.P_name and data2.c_time.strftime("%H:%M:00") == date:
                     timedata += data2.price * data2.saled
                     timeskewer += data2.saled
             accounting_timedata[data.P_name].append(timedata)
@@ -137,11 +147,18 @@ def results_page(request):
     # 時間の調整
     fix_date_list = []
     for date_str in date_list:
-        original_date = datetime.strptime(date_str, "%H:00")
-        fix_date = original_date + timedelta(hours=9)
-        fix_date_str = fix_date.strftime("%H:00")
+        original_date = datetime.strptime(date_str, "%H:%M:00")
+        fix_date = original_date + timedelta(minutes=9)
+        fix_date_str = fix_date.strftime("%H:%M:00")
         fix_date_list.append(fix_date_str)
     print('fix_date_list:', fix_date_list)
+
+    menu_items = [
+        {'name': 'Submit', 'url': reverse('AppPOS:POS_page')},
+        {'name': 'Results', 'url': reverse('AppPOS:results')},
+        {'name': 'Order', 'url': reverse('AppPOS:order')},
+        {'name': 'Admin', 'url': reverse('admin:index')},
+    ]
 
     stats = {
         'dividend': json.dumps(int(dividend)),  # 一人当たりの配当金(int)
@@ -155,6 +172,72 @@ def results_page(request):
         'totals_price': json.dumps(totals_price),  # 全体のの1時間ごとの金額(dict)
         # 串関連
         'times_skewer': json.dumps(times_skewer),  # 各商品ごとの串合計データ(dict)
-        'total_skewer': json.dumps(total_skewer)  # 串の合計(int)
+        'total_skewer': json.dumps(total_skewer),  # 串の合計(int)
+        'menu_items': menu_items,
     }
     return render(request, 'results.html', stats)
+
+def order_page(request):
+    # --- 変数初期化 ---
+    ord_id = []
+    name = []
+    saled = []
+    date = []
+    target_day = datetime(2023, 10, 22)
+    target_time = timezone.make_aware(target_day)
+    print(target_time)
+        
+    # --- リロードされたとき ---
+    if request.method == 'POST':
+        print('post!!')
+        new_id = request.POST['ord_id'].split(',')
+        new_name = request.POST['name'].split(',')
+        new_saled = request.POST['saled'].split(',')
+        new_date = request.POST['date'].split(',')
+        check_list = request.POST['check_list'].split(',')
+        print(check_list)
+        # --- チェックボックスが入力された行を取得 ---
+        for i, tmp in enumerate(check_list):
+            if tmp == 'true':
+                index = i
+            else:
+                break
+        print(new_date[index])
+        print(target_day.strptime("%H:%M:%S"))
+        target_time = datetime.today().strptime("%Y-%m-%d %H:%M:%S")
+        print(target_time)
+        
+    # target_timeより新しく追加されたデータを取得
+    target_time_after = models.Accounting_Data.objects.filter(c_time__gt=target_time)
+    for data in target_time_after:
+        if data.saled != 0:
+            name.append(data.name.P_name)
+            saled.append(data.saled)
+            date.append(data.c_time.strftime("%H:%M:%S"))
+
+    # --- データ送信 ---
+    menu_items = [
+        {'name': 'Submit', 'url': reverse('AppPOS:POS_page')},
+        {'name': 'Results', 'url': reverse('AppPOS:results')},
+        {'name': 'Order', 'url': reverse('AppPOS:order')},
+        {'name': 'Admin', 'url': reverse('admin:index')},
+    ]
+    stats={
+        'menu_items': menu_items,
+        'ord_id':json.dumps(ord_id),
+        'name': json.dumps(name), 
+        'saled': json.dumps(saled),
+        'date': json.dumps(date),
+
+    }
+    return render(request, 'order.html', stats)
+
+
+
+
+
+
+
+
+
+

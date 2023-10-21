@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load django_bootstrap5 %}
+
+{% block title %}order{% endblock %}
+
+{% block content %}
+    {% bootstrap_css %}
+    {% bootstrap_javascript %}
+    <style>
+        body {
+            font-family: "Fira Sans", sans-serif;
+            font-size: 1rem;
+            background-color: #192027;
+            margin: 0;
+            }
+        table td,
+        table th {
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+            }
+
+        thead th,
+        tbody th {
+            color: #fff;
+            }
+
+        tbody td {
+            font-weight: 500;
+            color: rgba(255,255,255,.65);
+            }
+
+        input[type=checkbos] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            outline: none;
+
+            border-bottom: 1px solid #444444;
+
+            display: block;
+            float: right;
+            margin: 0px 0px;
+            padding: 12px 24px;
+            background-color: #192027;
+            background-image: none;
+    }
+    </style>
+
+    <form name="checkform" method="POST">
+        {% csrf_token %}
+        <!-- 送信内容を格納 -->
+        <input type="hidden" id="check_list" name="check_list">
+        <input type="hidden" id="name" name="name">
+        <input type="hidden" id="saled" name="saled">
+        <input type="hidden" id="date" name="date">
+        <input type="hidden" id="ord_id" name="ord_id">
+        <!-- サブミットボタン -->
+        <button type="button" onclick="reload()">リロード</button>
+    </form>
+   
+    <section class="intro">
+        <div class="gradient-custom-2 h-100">
+          <div class="mask d-flex align-items-center h-100">
+            <div class="container">
+              <div class="row justify-content-center">
+                <div class="col-12">
+                  <div class="table-responsive" id="order_list">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+
+    <script>
+
+    
+    // ----- 各変数の定義 -----
+    var ord_id = JSON.parse('{{ord_id | safe}}'); // 発注された商品の名前
+    var names = JSON.parse('{{name | safe}}'); // 発注された商品の名前
+    var qty = JSON.parse('{{saled | safe}}'); // 個数
+    var times = JSON.parse('{{date | safe}}'); // タイムスタンプ
+
+    order_func()
+
+    // ----- テーブルを生成する関数 -----
+    function order_func(){
+
+        // ----- 発注リストの生成 -----
+        // 生成 ： <table></table>
+        let table = document.createElement('table');  
+        table.setAttribute('class','table table-dark table-bordered mb-0 order_list');
+        let thead = document.createElement('thead');  
+        table.appendChild(thead);
+        // 生成 ： テーブルのヘッダ
+        var header = ['注文ID', '商品', '個数', '注文時間', '進行状況']
+        let tr = document.createElement('tr');
+        for(j=0; j<header.length; j++){
+            let th = document.createElement('th');
+            th.setAttribute('scope','col');
+            th.textContent = header[j];
+            tr.appendChild(th);
+        }
+        thead.appendChild(tr);
+
+        let tbody = document.createElement('tbody');  
+        for(i=0; i<names.length; i++){
+            // 生成 ： <tr></tr>
+            let tr = document.createElement('tr');
+
+            // 生成 ： <td>（注文ID）</td>
+            let id_td = document.createElement('td'); 
+            id_td.textContent = ord_id[i];
+
+            // 生成 ： <td>（商品名）</td>
+            let name_td = document.createElement('td'); 
+            name_td.textContent = names[i];
+
+            // 生成 ： <td>（個数）</td>
+            let qty_td = document.createElement('td'); 
+            qty_td.textContent = qty[i];
+
+            // 生成 ： <td >（時間）</td>
+            let time_td = document.createElement('td'); 
+            time_td.textContent = times[i];
+
+            // 生成 ： チェックボックス
+            let checkbox = document.createElement('input'); 
+            checkbox.setAttribute('type','checkbox');
+            checkbox.setAttribute('id','check'+i);
+
+            // 各要素を td に追加 -> tableに追加
+            tr.appendChild(id_td);
+            tr.appendChild(name_td);
+            tr.appendChild(qty_td);
+            tr.appendChild(time_td);
+            tr.appendChild(checkbox);
+            tbody.appendChild(tr);
+        }
+        table.appendChild(tbody);
+        document.getElementById('order_list').appendChild(table);
+    }
+
+    // ----- リロードボタンが押されたときの処理 -----
+    function reload(){
+        // チェックボックスの状態
+        var check_list = []
+        for(i=0; i<names.length; i++){
+            status = document.getElementById('check'+i).checked;
+            check_list.push(status)
+
+        }
+        console.log(check_list)
+        // python に送る
+        document.getElementById('check_list').value = check_list;
+        document.getElementById('name').value = names;
+        document.getElementById('date').value = times;
+        document.getElementById('saled').value = qty;
+        document.getElementById('ord_id').value = ord_id;
+        document.checkform.submit();
+    }
+
+
+    </script>
+
+    {% endblock %}

@@ -138,7 +138,7 @@
                   },
                 ticks: { 
                     beginAtZero: false, // y=0から始まらないように設定
-                    stepSize: 5000,  // 間隔
+                    stepSize: 500,  // 間隔
                     callback:function(value,index,values){
                     return (value/1000)+'千円'
                     }
@@ -151,9 +151,10 @@
                 },
                 ticks: {
                   padding: 10,
-                  autoSkip: false,
+                  autoSkip: true,
                   maxRotation: 15,
-                  minRotation: 15
+                  minRotation: 15,
+                  maxTicksLimit: 10,
                 }
               }],
         },
@@ -166,8 +167,6 @@
         data: data,
         options: options
     });
-    
-    
 
     results_func();
     // ===== 各総計データの表示 =====
@@ -222,8 +221,7 @@
         font-family: "Fira Sans", sans-serif;
         font-size: 1rem;
         background-color: #192027;
-        
-        padding: 15px;
+        margin: 0;
       }
 /* ----- pタグ ----- */
     .text {
