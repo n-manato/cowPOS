@@ -139,7 +139,7 @@ def results_page(request):
 
     # 一人当たりの配当金
 
-    give_maney = 0
+    give_maney = 26000
     people = 31
     dividend = 0
     dividend = (sumtotal_price - give_maney) / people
@@ -148,7 +148,7 @@ def results_page(request):
     fix_date_list = []
     for date_str in date_list:
         original_date = datetime.strptime(date_str, "%H:%M:00")
-        fix_date = original_date + timedelta(minutes=9)
+        fix_date = original_date + timedelta(hours=9)
         fix_date_str = fix_date.strftime("%H:%M:00")
         fix_date_list.append(fix_date_str)
     print('fix_date_list:', fix_date_list)
