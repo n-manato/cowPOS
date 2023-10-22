@@ -34,7 +34,7 @@ def pos_page(request):
             submited.price = data.P_price
             submited.saled = request.POST.get('saled' + data.P_name)
             submited.save()
-  
+
     menu_items = [
         {'name': 'Submit', 'url': reverse('AppPOS:POS_page')},
         {'name': 'Results', 'url': reverse('AppPOS:results')},
@@ -46,14 +46,14 @@ def pos_page(request):
         'Prodacts_dict': Prodacts_dict,
         'menu_items': menu_items,
     }
-    
+
     return render(request, 'POS_page.html', stats)
 
 
 # http://127.0.0.1:8000/results/
 def results_page(request):
     # 初期化等ß
-    today_date = timezone.now() #- timedelta(days=1)
+    today_date = timezone.now()  # - timedelta(days=1)
     Prodacts_Info = models.Prodact_Name.objects.all()
     Accounting_Info = models.Accounting_Data.objects.filter(
         c_time__date=today_date)
@@ -66,12 +66,12 @@ def results_page(request):
     accounting_dict = {}
     # 1時間ごとのリストを作成
     date_list = []
-     # 最小日付から開始
+    # 最小日付から開始
     if max_date is None:
         max_date = today_date
     if min_date is None:
         min_date = today_date
-    current_date = min_date  
+    current_date = min_date
     total_price = 0
     sumtotal_price = 0
     total_skewer = 0
@@ -83,7 +83,7 @@ def results_page(request):
     while current_date <= max_date + timedelta(minutes=1):
         date_list.append(current_date.strftime("%H:%M:00"))
         current_date += timedelta(minutes=1)
-    
+
     # totalデータ作成
     for date in date_list:
         for data in Accounting_Info:
@@ -177,6 +177,7 @@ def results_page(request):
     }
     return render(request, 'results.html', stats)
 
+
 def order_page(request):
     # --- 変数初期化 ---
     ord_id = []
@@ -186,7 +187,7 @@ def order_page(request):
     target_day = datetime(2023, 10, 22)
     target_time = timezone.make_aware(target_day)
     print(target_time)
-        
+
     # --- リロードされたとき ---
     if request.method == 'POST':
         print('post!!')
@@ -195,20 +196,13 @@ def order_page(request):
         new_saled = request.POST['saled'].split(',')
         new_date = request.POST['date'].split(',')
         check_list = request.POST['check_list'].split(',')
-        print(check_list)
-        # --- チェックボックスが入力された行を取得 ---
-        for i, tmp in enumerate(check_list):
-            if tmp == 'true':
-                index = i
-            else:
-                break
-        print(new_date[index])
-        print(target_day.strptime("%H:%M:%S"))
-        target_time = datetime.today().strptime("%Y-%m-%d %H:%M:%S")
-        print(target_time)
-        
+
+        # print(target_day.strptime("%H:%M:%S"))
+        # target_time = datetime.today().strptime("%Y-%m-%d %H:%M:%S")
+
     # target_timeより新しく追加されたデータを取得
-    target_time_after = models.Accounting_Data.objects.filter(c_time__gt=target_time)
+    target_time_after = models.Accounting_Data.objects.filter(
+        c_time__gt=target_time)
     for data in target_time_after:
         if data.saled != 0:
             name.append(data.name.P_name)
@@ -222,22 +216,12 @@ def order_page(request):
         {'name': 'Order', 'url': reverse('AppPOS:order')},
         {'name': 'Admin', 'url': reverse('admin:index')},
     ]
-    stats={
+    stats = {
         'menu_items': menu_items,
-        'ord_id':json.dumps(ord_id),
-        'name': json.dumps(name), 
+        'ord_id': json.dumps(ord_id),
+        'name': json.dumps(name),
         'saled': json.dumps(saled),
         'date': json.dumps(date),
 
     }
     return render(request, 'order.html', stats)
-
-
-
-
-
-
-
-
-
-
